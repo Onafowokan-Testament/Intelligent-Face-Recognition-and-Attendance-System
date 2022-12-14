@@ -1,59 +1,43 @@
-#importing necessary modules
 import cv2 as cv
 import numpy as np
 import csv
 from datetime import datetime
 import face_recognition
+import math
+import os, sys
+#finding the confidence of the face
+
+def face_confidence(face_distance, face_match_threshold=0.6):
+    range = (1.0 - face_match_threshold)
+    linear_val = (1.0 - face_distance) / (range * 2.0)
+    if face_distance > face_match_threshold:
+        return str(round(linear_val * 100, 2)) + '%'
+    else:
+        value = (linear_val + ((1.0 - linear_val) * math.pow((linear_val - 0.5) * 2, 0.2))) * 100
+        return str(round(value, 2)) + '%'
 
 
 #creating object from our cv module
 video_capture = cv.VideoCapture(0)
-
-#ggetting and encoding specimen 
+if not video_capture.isOpened():
+    sys.exit("Video source not found")
+#getting and encoding specimen 
 #getting and encoding specimen pictures
-testament_image = face_recognition.load_image_file(r'C:\Users\USER\Pictures\ADOBE RESOURCES\Camera Roll\testament.jpg')
-testament_encodings = face_recognition.face_encodings(testament_image)
-if len(testament_encodings) > 0:
-    testament_encoding = testament_encodings[0]
-
-nifise_image = face_recognition.load_image_file(r'C:\Users\USER\OneDrive - COVENANT UNIVERSITY\PICS FROM PHONE\nifise.jpg')
-nifise_encodings = face_recognition.face_encodings(nifise_image)
-if len(nifise_encodings) > 0:
-    nifise_encoding = nifise_encodings[0]
-
-ini_image = face_recognition.load_image_file(r'C:\Users\USER\OneDrive - COVENANT UNIVERSITY\PICS FROM PHONE\ini.jpg')
-ini_encodings = face_recognition.face_encodings(ini_image)
-if len(ini_encodings) > 0:
-    ini_encoding = ini_encodings[0]
-
-daddy_image = face_recognition.load_image_file(r'C:\Users\USER\OneDrive - COVENANT UNIVERSITY\PICS FROM PHONE\daddy.jpg')
-daddy_encodings = face_recognition.face_encodings(daddy_image)
-if len(daddy_encodings) > 0:
-    daddy_encoding = daddy_encodings[0]
-
-bill_clinton_image = face_recognition.load_image_file(r'C:\Users\USER\Pictures\FACE_RECOGNITIO_PICS\bill_clinton.jpg')
-bill_clinton_encodings = face_recognition.face_encodings(bill_clinton_image)
-if len(bill_clinton_encodings) > 0:
-    bill_clinton_encoding = bill_clinton_encodings[0]
-
-#creating list for created encodings
-known_face_encodings =[
-    nifise_encoding,
-    ini_encoding,
-    testament_encoding,
-    bill_clinton_encoding]
 
 
 
 
-#creating list for known_face names
-known_face_names =[
-    'testament',
-    'nifise',
-    'ini',
-    'daddy'
+known_face_encodings= []
+known_face_names = []
+for image in os.listdir('faces'):
+    face_image = face_recognition.load_image_file(f'faces/{image}')
+    face_encoding = face_recognition.face_encodings(face_image)[0]
+    if face_encoding:
+        known_face_encodings.append(face_encoding)
+        known_face_names.append(image)
 
-]
+
+
 
 #creating family name list
 
@@ -103,11 +87,12 @@ while True:
             
         
             best_match_index = np.argmin(face_distance)
-            print(best_match_index)
+            confidence = face_confidence(face_distance[best_match_index])
             if matches[best_match_index]:
                 name= known_face_names[best_match_index]
             #Entering name to csv file
-            face_names.append(name)
+            face_names.append(f'{name} ({confidence})')
+            print(face_names)
             if name in known_face_names:
                 if name in family:
                     print(name)
@@ -117,8 +102,19 @@ while True:
                     #write down to file
                     inwrtiter.writerow([name,current_time])
 
+    for(top, right, bottom, left), name in zip(face_locations,face_names):
+        top *= 4
+        right *= 4
+        bottom *= 4
+        left *= 4
+        
+        cv.rectangle(frame,(left,top), (right,bottom),(0,0,255),2)
+        cv.rectangle(frame,(left,bottom-35), (right,bottom),(0,0,255),-1)
+        cv.putText(frame,name, (left+6,bottom - 6),cv.FONT_HERSHEY_DUPLEX,0.8,(255,255,255),1)
+    
+
     cv.imshow('family attendance system', frame)
-    if cv.waitKey(1) & 0xFF == ord('q'):
+    if cv.waitKey(1)  == ord('q'):
         break
 
 #release camera
