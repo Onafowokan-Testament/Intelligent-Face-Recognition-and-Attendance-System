@@ -9,10 +9,9 @@ import os, sys
 import pyttsx3
 import speech_recognition as sp
 import time
-
-def load_animation:
-    import time
-    import sys
+import sys
+def load_animation():
+    
     #animation = ["10%", "20%", "30%", "40%", "50%", "60%", "70%", "80%", "90%", "100%"]
     animation = ["[■□□□□□□□□□]","[■■□□□□□□□□]", "[■■■□□□□□□□]", "[■■■■□□□□□□]", "[■■■■■□□□□□]", "[■■■■■■□□□□]", "[■■■■■■■□□□]", "[■■■■■■■■□□]", "[■■■■■■■■■□]", "[■■■■■■■■■■]"]
     animation = animation * 3
@@ -75,12 +74,23 @@ class  FaceRecognition:
     family= []
     f= None
     inwriter = None
+    not_done = False
     def __init__(self) :
-        self.encode_face()
+        self.computer_say('We are working on your images,please wait...')
+        while not self.not_done:
+            load_animation()
+            self.encode_face()
+        self.computer_say('your camera will be activated soon')
+        
 
     def computer_say(self, sentence):
+        engine.setProperty('volume',1)
+        voices = engine.getProperty('voices')
+        print(voices)
+        engine.setProperty('voice', voices[0].id)
         engine.say(sentence)
         engine.runAndWait()
+       
     def computer_listen(self,source):
         print('listening...')
         audio = rec.listen(source)
@@ -95,15 +105,17 @@ class  FaceRecognition:
                 self.known_face_encodings.append(face_encoding)
                 self.known_face_names.append(image)
             else:
-                os.remove('faces/{image}')
+                os.remove(f'faces/{image}')
+            self.not_done = True
     def encode_image(self,image):
         face_image = face_recognition.load_image_file(f'faces/{image}.png')
         if face_recognition.face_encodings(face_image):
             face_encoding = face_recognition.face_encodings(face_image)[0]
             self.known_face_encodings.append(face_encoding)
-            self.known_face_names.append(image)
+            self.known_face_names.append(f'faces/{image}.png')
         else:
             os.remove(image)
+            
 
     def run_recognition(self):
         self.f = open(f'{self.current_date}.csv', 'w+', newline = '',encoding='utf-8') 
@@ -143,16 +155,14 @@ class  FaceRecognition:
                     else:
                         video_capture.release()
                         cv.destroyAllWindows()
-                        self.computer_say('Would you like to add your image to the database yes or np')
+                        self.computer_say('Image not in database,Would you like to add your image to the database yes or np')
                         # answer = self.computer_listen(source)
                         answer = input('yes or no? ')
-                        answer = 'yes'
-                        time.sleep(3)
                         if answer == 'yes':
                             self.computer_say('what is your name')
                             # answer = self.computer_listen(source)
                             answer = input('Input your name ?   ')
-                            self.computer_say('please station your head to show  your face  unless picture wont be stored')
+                            self.computer_say('please station your head to show  your face  unless picture won\'t be stored')
                             cam = cv.VideoCapture(0)
                             while True:
                                 ret,frames = cam.read()
