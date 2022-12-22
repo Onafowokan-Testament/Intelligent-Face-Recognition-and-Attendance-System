@@ -19,32 +19,8 @@ def load_animation():
         time.sleep(0.2)
         sys.stdout.write("\r" + animation[i % len(animation)])
         sys.stdout.flush()
-
-def snap_picture(image_name, video_capture):
-    cam = cv.VideoCapture(0)
-    while True:
-        ret,frame = cam.read()
-
-        if not ret:
-            print('failed to grab frame')
-            break
-        cv.imshow('test', frame)
-
-        k = cv.waitKey(1)
-        
-        if k%256 == 32:
-            img_name = 'faces/{image_name}.png'
-            cv2.imwrite(image_name,frame)
-            computer_say('screenshot_taken')
-            computer_say('please wait a few minute for it to encode your face')
-            encode_image(answer)
-            computer_say('Your face has been successfully added to the database')
-            break
-        
-
-
-
-
+for i in range(20):
+    print('.')
 #initiate pyttsx3
 engine = pyttsx3.init()
 #initialize recognitiom
@@ -86,8 +62,7 @@ class  FaceRecognition:
     def computer_say(self, sentence):
         engine.setProperty('volume',1)
         voices = engine.getProperty('voices')
-        print(voices)
-        engine.setProperty('voice', voices[0].id)
+        engine.setProperty('voice', voices[1].id)
         engine.say(sentence)
         engine.runAndWait()
        
@@ -113,8 +88,10 @@ class  FaceRecognition:
             face_encoding = face_recognition.face_encodings(face_image)[0]
             self.known_face_encodings.append(face_encoding)
             self.known_face_names.append(f'faces/{image}.png')
+            self.computer_say('Your face has been successfully added to the database')
         else:
-            os.remove(image)
+            self.computer_say('No face in detected in this photo, picture deleted from database')
+            os.remove(f'faces/{image}.png')
             
 
     def run_recognition(self):
@@ -155,9 +132,10 @@ class  FaceRecognition:
                     else:
                         video_capture.release()
                         cv.destroyAllWindows()
-                        self.computer_say('Image not in database,Would you like to add your image to the database yes or np')
+                        self.computer_say('Image not in database,Would you like to add your image to the database yes or no')
                         # answer = self.computer_listen(source)
-                        answer = input('yes or no? ')
+                        time.sleep(3)
+                        answer = input('yes or no ? ')
                         if answer == 'yes':
                             self.computer_say('what is your name')
                             # answer = self.computer_listen(source)
@@ -173,11 +151,10 @@ class  FaceRecognition:
                                 k = cv.waitKey(1)
                                 if k%256 == 32:
                                     img_name = f'faces/{answer}.png'
-                                    cv.imwrite(img_name,frame)
+                                    cv.imwrite(img_name,frames)
                                     self.computer_say('screenshot_taken')
                                     self.computer_say('please wait a few minute for it to encode your face')
                                     self.encode_image(answer)
-                                    self.computer_say('Your face has been successfully added to the database')
                                     cam.release()
                                     cv.destroyAllWindows()
                                     self.run_recognition()
